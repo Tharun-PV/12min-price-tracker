@@ -1,5 +1,3 @@
-// pages/api/jewelRates.js
-
 export default async function handler(req, res) {
   try {
     const now = new Date();
@@ -18,13 +16,9 @@ export default async function handler(req, res) {
     const response = await fetch(url);
     const data = await response.json();
 
-    if (!data || !Array.isArray(data.result)) {
-      return res.status(500).send("Invalid API response");
-    }
-
     const requiredNames = ["DIAMOND", "GOLD (18K)", "GOLD (22K)", "ROSEGOLD", "SILVER"];
     const rows = requiredNames.map((name) => {
-      const item = data.result.find((r) => r.name === name);
+      const item = data.result?.find((r) => r.name === name);
       return `${name.padEnd(16)} ₹ ${item?.rate ?? "N/A"} /gm`;
     });
 
