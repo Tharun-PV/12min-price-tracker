@@ -1,42 +1,46 @@
-export const config = {
-  runtime: 'edge',
-  schedule: '*/12 * * * *'
-};
+// pages/api/jewelRates.js
 
-export default async function handler() {
-  const res = await fetch("https://froads.trysumangaleejewellers.in/products/productrate/metadata/get-all?filters=%7B%22branch%22%3A%22ecc71e26-1691-11ea-b1f7-00016cd7cb45%22%2C%22createdAtFrom%22%3A%222025-04-07T00%3A00%3A00Z%22%2C%22createdAtTo%22%3A%222025-04-07T23%3A59%3A59Z%22%7D");
-  const data = await res.json();
-  const items = data?.data || [];
+export default async function handler(req, res) {
+  try {
+    const now = new Date();
+    const istDate = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+    const createdAtFrom = new Date(now.setHours(0, 0, 0, 0)).toISOString();
+    const createdAtTo = new Date().toISOString();
 
-  const names = ["DIAMOND", "GOLD (18K)", "GOLD (22K)", "ROSEGOLD", "SILVER"];
-  const output = [];
+    const url = `https://froads.trysumangaleejewellers.in/products/productrate/metadata/get-all?filters=${encodeURIComponent(
+      JSON.stringify({
+        branch: 'ecc71e26-1691-11ea-b1f7-00016cd7cb45',
+        createdAtFrom,
+        createdAtTo,
+      })
+    )}`;
 
-  const now = new Date().toLocaleString("en-IN", {
-    timeZone: "Asia/Kolkata"
-  });
+    const response = await fetch(url);
+    const data = await response.json();
 
-  output.push(`:moneybag: *Daily Rates*\n${now}`);
-  output.push("NAME            PRICE");
-  output.push("----------------------------");
-
-  names.forEach(name => {
-    const item = items.find(i => i.name.toUpperCase().includes(name.toUpperCase()));
-    if (item) {
-      output.push(`${name.padEnd(16)}₹ ${item.price} /gm`);
+    if (!data || !Array.isArray(data.result)) {
+      return res.status(500).send("Invalid API response");
     }
-  });
 
-  output.push("----------------------------");
+    const requiredNames = ["DIAMOND", "GOLD (18K)", "GOLD (22K)", "ROSEGOLD", "SILVER"];
+    const rows = requiredNames.map((name) => {
+      const item = data.result.find((r) => r.name === name);
+      return `${name.padEnd(16)} ₹ ${item?.rate ?? "N/A"} /gm`;
+    });
 
-  const slackPayload = {
-    text: output.join("\n")
-  };
+    const formatted = `:moneybag: Daily Rates\n${istDate.toLocaleString("en-IN")}\nNAME            PRICE\n----------------------------\n${rows.join(
+      "\n"
+    )}\n----------------------------`;
 
-  await fetch("https://hooks.slack.com/services/your/webhook/url", {
-    method: "POST",
-    body: JSON.stringify(slackPayload),
-    headers: { "Content-Type": "application/json" }
-  });
+    await fetch(process.env.SLACK_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: formatted }),
+    });
 
-  return new Response("Slack message sent");
+    res.status(200).send("Sent to Slack");
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).send("Failed");
+  }
 }
