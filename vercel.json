@@ -1,7 +1,8 @@
 {
     "functions": {
-      "api/jewelRates/route.js": {
-        "runtime": "edge"
+      "api/jewelRates.js": {
+        "runtime": "nodejs18.x",
+        "schedule": "*/12 * * * *"
       }
     }
   }
