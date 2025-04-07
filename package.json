@@ -1,6 +1,12 @@
 {
-    "name": "jewel-slack-bot",
-    "version": "1.0.0",
-    "type": "module"
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^13 or 14",
+    "react": "...",
+    "react-dom": "..."
   }
-  
+}
