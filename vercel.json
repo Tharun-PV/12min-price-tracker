@@ -1,6 +1,6 @@
 {
     "functions": {
-      "api/**/route.js": {
+      "api/jewelRates/route.js": {
         "runtime": "edge"
       }
     }
